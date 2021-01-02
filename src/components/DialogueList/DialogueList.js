@@ -1,5 +1,4 @@
 function DialogueList(props) {
-  console.log('props: ', props);
   return (
     <ul>
       {props.results.map((item, index) => (

@@ -1,40 +1,51 @@
 import React from 'react';
 import DialogueList from '../DialogueList/DialogueList';
+import {connect} from 'react-redux';
 class DialogueListContainer extends React.Component {
-
   constructor(props) {
     super(props);
     this.state = {
       error: null,
-      isLoaded: false,
+      isLoaded: true,
       items: [],
     };
   }
-  prepareQuery() {
-    let query = 'select?q=*:*&rows=20';
-    return query;
+  componentDidMount() {
+    this.search(this.props.searchKeyword);
   }
-
-  search() {
-    const query = this.prepareQuery();
+  componentDidUpdate(newProps) {
+    if(this.props.searchKeyword !== newProps.searchKeyword) {
+      this.search(this.props.searchKeyword);
+    }
+  }
+  prepareQuery(searchKeyword) {
+    const filters = {
+      q: searchKeyword,
+      rows: process.env.REACT_APP_DEFAULT_RESULT_ROWS,
+      indent: 'off',
+      df: process.env.REACT_APP_DEFAULT_FIELD,
+      wt: process.env.REACT_APP_RESULT_RESPONSE_TYPE
+    };
+    return 'select?' + (new URLSearchParams(filters).toString());
+  }
+  search(searchKeyword) {
+    const query = this.prepareQuery(searchKeyword);
     fetch(process.env.REACT_APP_SEARCH_API_URL + query)
     .then(res => res.json())
     .then((result) => {
-        console.log('result: ', result);
         this.setState({
           isLoaded: true,
+          error: null,
           items: result.response.docs
         });
       },
       (error) => {
         this.setState({
           isLoaded: true,
-          error
+          error,
+          items: []
         });
       });
-  }
-  componentDidMount() {
-    this.search();
   }
   render() {
     const { error, isLoaded, items } = this.state;
@@ -47,5 +58,9 @@ class DialogueListContainer extends React.Component {
     }
   }
 }
-
-export default DialogueListContainer;
+const mapStateToProps = (state) => {
+  return {
+    searchKeyword: state.searchKeyword
+  }
+};
+export default connect(mapStateToProps)(DialogueListContainer);
